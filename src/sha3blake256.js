@@ -473,6 +473,7 @@ function sha3blake256(obj, next) {
     
     s = [0,0,0,0],
     
+    // low, high
     t = [0,0],
     
     h = [
@@ -496,7 +497,7 @@ function sha3blake256(obj, next) {
   /*
   Pre-processing:
   begin with the original message of length L bits
-  */
+  
   console.log("input", input);
   console.log("salt", salt);
   console.log("inputBytes", inputBytes);
@@ -506,6 +507,7 @@ function sha3blake256(obj, next) {
   console.log("inputSizeInBits", inputSizeInBits);
   console.log("sizeBytes", sizeBytes);
   console.log("hexSize", hexSize);
+  */
   
   // add message
   switch (inputType) {
@@ -540,10 +542,10 @@ function sha3blake256(obj, next) {
     buffer[x++] = parseInt(arrHexSize.shift() + arrHexSize.shift(), 16);
   }
   
-  console.log("buffer", BYTE_SIZE);
-  outIdx(buffer, BYTE_SIZE);
+  //console.log("buffer", BYTE_SIZE);
+  //outIdx(buffer, BYTE_SIZE);
   
-  console.log("u256", u256);
+  //console.log("u256", u256);
   
   function transform(a,b,c,d,e, i) {
     
@@ -551,17 +553,17 @@ function sha3blake256(obj, next) {
       k1 = j[e],
       k2 = j[e+1];
     
-    v[a] = (v[a] + v[b] + (m[k1] ^ u256[k2])) >>> 0;
-    v[d] = (rightrotate(v[d] ^ v[a], 16)) >>> 0;
-    v[c] = (v[c] + v[d]) >>> 0;
-    v[b] = (rightrotate(v[b] ^ v[c], 12)) >>> 0;
+    v[a] = (v[a] + v[b] + (m[k1] ^ u256[k2]));
+    v[d] = (rightrotate(v[d] ^ v[a], 16));
+    v[c] = (v[c] + v[d]);
+    v[b] = (rightrotate(v[b] ^ v[c], 12));
     
-    v[a] = (v[a] + v[b] + (m[k2] ^ u256[k1])) >>> 0;
-    v[d] = (rightrotate(v[d] ^ v[a], 8)) >>> 0;
-    v[c] = (v[c] + v[d]) >>> 0;
-    v[b] = (rightrotate(v[b] ^ v[c], 7)) >>> 0;
+    v[a] = (v[a] + v[b] + (m[k2] ^ u256[k1]));
+    v[d] = (rightrotate(v[d] ^ v[a], 8));
+    v[c] = (v[c] + v[d]);
+    v[b] = (rightrotate(v[b] ^ v[c], 7));
     
-    console.log("transform["+i+"]", a,b,c,d,e, v);
+    //console.log("transform["+i+"]", a,b,c,d,e, v);
   }
   
   for (x=0; x<preProcessBlockWidth; x+=BLOCK_SIZE_BYTES) {
@@ -571,8 +573,11 @@ function sha3blake256(obj, next) {
       u = z * WORD_SIZE_BYTES;
       y = x + u;
       m[z] = buffer[y] * BYTE_MULT_32_1 + buffer[y+1] * BYTE_MULT_32_2 + buffer[y+2] * BYTE_MULT_32_3 + buffer[y+3];
-      console.log("z", z, "u", u, "y", y, "m["+z+"]", m[z]);
+      //console.log("z", z, "u", u, "y", y, "m["+z+"]", m[z]);
     }
+    
+    // counter
+    t[0] += 512;
     
     // copy hash bytes
     v[0] = h[0];
@@ -585,18 +590,30 @@ function sha3blake256(obj, next) {
     v[7] = h[7];
     
     // salt bytes mixed with pi constants
+    /*
     v[8] = (s[0] ^ u256[0]) >>> 0;
     v[9] = (s[1] ^ u256[1]) >>> 0;
     v[10] = (s[2] ^ u256[2]) >>> 0;
     v[11] = (s[3] ^ u256[3]) >>> 0;
+    */
+    v[8] = (s[0] ^ u256[0]);
+    v[9] = (s[1] ^ u256[1]);
+    v[10] = (s[2] ^ u256[2]);
+    v[11] = (s[3] ^ u256[3]);
     
     // counter and more pi constants
+    /*
     v[12] = (t[0] ^ u256[4]) >>> 0;
     v[13] = (t[0] ^ u256[5]) >>> 0;
     v[14] = (t[1] ^ u256[6]) >>> 0;
     v[15] = (t[1] ^ u256[7]) >>> 0;
+    */
+    v[12] = (t[0] ^ u256[4]);
+    v[13] = (t[0] ^ u256[5]);
+    v[14] = (t[1] ^ u256[6]);
+    v[15] = (t[1] ^ u256[7]);
     
-    console.log("v", v);
+    //console.log("v", v);
     
     // compression rounds
     for (z=0; z<COMPRESSION_ROUNDS; z++) {
@@ -620,8 +637,8 @@ function sha3blake256(obj, next) {
     h[5] = (h[5] ^ s[1] ^ v[5] ^ v[13]) >>> 0;
     h[6] = (h[6] ^ s[2] ^ v[6] ^ v[14]) >>> 0;
     h[7] = (h[7] ^ s[3] ^ v[7] ^ v[15]) >>> 0;
-    
-    console.log("h", h);
+
+    //console.log("h", h);
     
   }
   

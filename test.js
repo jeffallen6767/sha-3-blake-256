@@ -9,6 +9,25 @@ var fs = require('fs'),
       "salt": null,
       "output": "0ce8d4ef4dd7cd8d62dfded9d4edb0a774ae6a41929a74da23109e8f11139c87"
     },
+    {
+      "input": [
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0
+      ],
+      "salt": null,
+      "output": "d419bad32d504fb7d44d460c42c5593fe544fa4c135dec31e21bd9abdcc22d41"
+    },
+    {
+      "input": "Kilroy was here!",
+      "salt": null,
+      "output": "b25c02ccfa1f664d25a15d999b56a4be1ad84a029a96be5d654387a2def99916"
+    },
     /*
     {
       "input": "The quick brown fox jumps over the lazy dog",
