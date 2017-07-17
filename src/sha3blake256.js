@@ -388,8 +388,38 @@ function outIdx(vals, size) {
     console.log(x, vals[x]);
   }
 }
+
+/*
+BLAKE-256 uses 16 constants
+First digits of π (pi):
+k[0..15] :=
+  0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344, 0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
+  0x452821E6, 0x38D01377, 0xBE5466CF, 0x34E90C6C, 0xC0AC29B7, 0xC97C50DD, 0x3F84D5B5, 0xB5470917
+*/
+var u256 = [
+  0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344, 0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
+  0x452821E6, 0x38D01377, 0xBE5466CF, 0x34E90C6C, 0xC0AC29B7, 0xC97C50DD, 0x3F84D5B5, 0xB5470917
+];
+
+// Permutations of {0, . . . , 15} used by the BLAKE functions
+// NOTE: repeats after round 10
+var sigma = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  [14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3],
+  [11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4],
+  [7, 9, 3, 1, 13, 12, 11, 14, 2, 6, 5, 10, 4, 0, 15, 8],
+  [9, 0, 5, 7, 2, 4, 10, 15, 14, 1, 11, 12, 6, 8, 3, 13],
+  [2, 12, 6, 10, 0, 11, 8, 3, 4, 13, 7, 5, 15, 14, 1, 9],
+  [12, 5, 1, 15, 14, 13, 4, 10, 0, 7, 6, 3, 9, 2, 8, 11],
+  [13, 11, 7, 14, 12, 1, 3, 9, 5, 0, 15, 4, 8, 6, 2, 10],
+  [6, 15, 14, 9, 11, 3, 0, 8, 12, 2, 13, 7, 1, 4, 10, 5],
+  [10, 2, 8, 4, 7, 6, 1, 5, 15, 11, 9, 14, 3, 12, 13, 0]
+];
+
 // 1 character = 8 bits = 1 byte
-var BYTE_SIZE = 8,
+var COMPRESSION_ROUNDS = 14,
+  
+  BYTE_SIZE = 8,
   WORD_SIZE_BYTES = 4,
 
   PAD_START_DEC_VAL_SOME = 128,
@@ -411,39 +441,12 @@ var BYTE_SIZE = 8,
   BYTE_MULT_32_3 = 256,
   
   ZERO_BITS_4_BYTES = "00000000",
-  ZERO_BITS_8_BYTES = "0000000000000000";
-
-/*
-BLAKE-256 uses 16 constants
-First digits of π (pi):
-k[0..15] :=
-  0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344, 0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
-  0x452821E6, 0x38D01377, 0xBE5466CF, 0x34E90C6C, 0xC0AC29B7, 0xC97C50DD, 0x3F84D5B5, 0xB5470917
-*/
-var u256 = [
-  0x243F6A88, 0x85A308D3, 0x13198A2E, 0x03707344, 0xA4093822, 0x299F31D0, 0x082EFA98, 0xEC4E6C89,
-  0x452821E6, 0x38D01377, 0xBE5466CF, 0x34E90C6C, 0xC0AC29B7, 0xC97C50DD, 0x3F84D5B5, 0xB5470917
-];
-
-// Permutations of {0, . . . , 15} used by the BLAKE functions
-var sigma = [
-  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  [14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3],
-  [11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4],
-  [7, 9, 3, 1, 13, 12, 11, 14, 2, 6, 5, 10, 4, 0, 15, 8],
-  [9, 0, 5, 7, 2, 4, 10, 15, 14, 1, 11, 12, 6, 8, 3, 13],
-  [2, 12, 6, 10, 0, 11, 8, 3, 4, 13, 7, 5, 15, 14, 1, 9],
-  [12, 5, 1, 15, 14, 13, 4, 10, 0, 7, 6, 3, 9, 2, 8, 11],
-  [13, 11, 7, 14, 12, 1, 3, 9, 5, 0, 15, 4, 8, 6, 2, 10],
-  [6, 15, 14, 9, 11, 3, 0, 8, 12, 2, 13, 7, 1, 4, 10, 5],
-  [10, 2, 8, 4, 7, 6, 1, 5, 15, 11, 9, 14, 3, 12, 13, 0],
-  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-  [14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3],
-  [11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4],
-  [7, 9, 3, 1, 13, 12, 11, 14, 2, 6, 5, 10, 4, 0, 15, 8],
-  [9, 0, 5, 7, 2, 4, 10, 15, 14, 1, 11, 12, 6, 8, 3, 13],
-  [2, 12, 6, 10, 0, 11, 8, 3, 4, 13, 7, 5, 15, 14, 1, 9]
-];
+  ZERO_BITS_8_BYTES = "0000000000000000",
+  
+  NUM_SIGMA = sigma.length,
+  
+  INPUT_TYPE_ARRAY = "bytes",
+  INPUT_TYPE_STRING = "string";
 
 function rightrotate(bits, num) {
   return ((bits >>> num) | (bits << (32 - num)));
@@ -453,6 +456,7 @@ function sha3blake256(obj, next) {
   
   var input = obj.input,
     salt = obj.salt,
+    inputType = Array.isArray(input) ? INPUT_TYPE_ARRAY : INPUT_TYPE_STRING,
     inputBytes = input.length,
     // # of chars + 0x81 [1000 0001] + 64bit length of msg in bits
     preProcessOffsetBytes = (inputBytes + MIN_PRE_CALC_BYTES) % BLOCK_SIZE_BYTES,
@@ -504,8 +508,18 @@ function sha3blake256(obj, next) {
   console.log("hexSize", hexSize);
   
   // add message
-  for (x=0; x<inputBytes; x++) {
-    buffer[x] = input.charCodeAt(x);
+  switch (inputType) {
+    case INPUT_TYPE_ARRAY:
+      for (x=0; x<inputBytes; x++) {
+        buffer[x] = input[x];
+      }
+      break;
+    case INPUT_TYPE_STRING:
+    default:
+      for (x=0; x<inputBytes; x++) {
+        buffer[x] = input.charCodeAt(x);
+      }
+      break;
   }
   
   // add first pad byte:
@@ -533,7 +547,7 @@ function sha3blake256(obj, next) {
   
   function transform(a,b,c,d,e, i) {
     
-    var j = sigma[i]
+    var j = sigma[i % NUM_SIGMA],
       k1 = j[e],
       k2 = j[e+1];
     
@@ -585,7 +599,7 @@ function sha3blake256(obj, next) {
     console.log("v", v);
     
     // compression rounds
-    for (z=0; z<14; z++) {
+    for (z=0; z<COMPRESSION_ROUNDS; z++) {
       // columns
       transform( 0,  4,  8, 12,  0, z );
       transform( 1,  5,  9, 13,  2, z );
